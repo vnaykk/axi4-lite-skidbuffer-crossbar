@@ -10,6 +10,13 @@ module axi_skid_buffer #(parameter int DATA_WIDTH = 32) (
     assign s_ready = ~skid_valid; assign m_valid = valid_reg; assign m_data = data_reg;
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin valid_reg <= 1'b0; skid_valid <= 1'b0; data_reg <= '0; skid_reg <= '0; end
-        else if (s_ready && s_valid) begin data_reg <= s_data; valid_reg <= 1'b1; end
+        else if (skid_valid) begin
+            if (m_ready) begin data_reg <= skid_reg; valid_reg <= 1'b1; skid_valid <= 1'b0; end
+        end else begin
+            if (s_valid) begin
+                if (!valid_reg || m_ready) begin data_reg <= s_data; valid_reg <= 1'b1; end
+                else begin skid_reg <= s_data; skid_valid <= 1'b1; end
+            end else if (m_ready) valid_reg <= 1'b0;
+        end
     end
 endmodule
